@@ -33,7 +33,7 @@ Así pues, lo primero que haremos es cargar el dataset en R:
 require(factoextra)
 
 # Carga el dataset
-datos <- read.csv("D:/Master/4.4_Cluster_ejercicio.csv")
+datos <- read.csv("4.4_Cluster_ejercicio.csv")
 head(datos)
 ```
 
@@ -123,11 +123,38 @@ Una vez disponemos de la visualización en dos dimensiones de los estados que pe
 
 * **Ejercicio 6**: Elige qué estado consideras que es más representativo de cada cluster. Justifica tu respuesta.
 
-```{r}
-# Introduce aquí tu respuesta
-print("Tu respuesta")
+Como en nuestro escenario `k=4` tenemos que escoger 1 estado representante de cada cluster, para ello se verá la distnacia con respecto al centroide. Aquel estado más cercano al centroide será el escogido.
 
+
+```{r}
+datos_scaled <- as.data.frame(datos_scaled)
+datos_scaled$cluster <- km_clusters$cluster
+
+distance_to_center <- function(datos_scaled, k, km_clusters){
+  
+  data_filter = datos_scaled[datos_scaled$cluster == k, ]
+  center <- km_clusters$centers[k,]
+  distance <- Inf
+  state <- NULL
+  for (row in 1:nrow(data_filter)){
+        k_distance <- sqrt(sum(data_filter[row, -1] - center)^2)
+    if (k_distance < distance) {
+      distance <- k_distance
+      state <- row.names(data_filter)[row]
+    }
+    
+  }
+  return (c(state, distance))
+  
+}
+
+
+representantes <- c(distance_to_center(datos_scaled, 1, km_clusters)[1], distance_to_center(datos_scaled, 2, km_clusters)[1], distance_to_center(datos_scaled, 3, km_clusters)[1], distance_to_center(datos_scaled, 4, km_clusters)[1])
+
+print(representantes)
 ```
+
+Nota: El cluster 4 solo cuenta con un uno estado!.
 
 * **Ejercicio 7**: Indexa cada uno de los estados más representativos de cada cluster sobre el dataframe inicial y crea un nuevo tablón de datos en el que únicamente se encuentren estos estados. ¿Qué variables difieren en más en valor entre unos estados y otros?
 
@@ -137,34 +164,42 @@ print("Tu respuesta")
 # Creo nuevo dataframe sobre el tablon inicial solo con los estados que quiero ver
 
 # Introduce aquí tu respuesta
-print("Tu respuesta")
-
+print( t(datos[datos$State %in% representantes, ]))
 ```
+El Cluster 4 posee un alto nivel de 
+
 
 * **Ejercicio 8**: ¿Cuál de los estados seleccionados en el ejercicio anterior tiene una tasa de desempleo más elevada?
 
+En primer lugar vamos a asignar la etiqueta de los clusters a los datos originales.
+
 ```{r}
-# Introduce aquí tu respuesta
-print("Tu respuesta")
+datos$cluster <- km_clusters$cluster
+
+t(aggregate(datos, by = list(datos$cluster), FUN = mean))['StateUnemployRate', ]
+
 
 ```
+El cluster que tiene una mayor tasa de desempleo es el cluster 4 con un unico valor
 
 * **Ejercicio 9**: Si el presidente de los Estados Unidos quisiera lanzar una campaña para aumentar el volumen de exportaciones de pequeños negocios hacia el exterior sobre los estados que menos exportan del país, y con menor valor, qué cluster o clusters le propondrías? (Menciona únicamente el estado que consideres más representativo del cluster)
 
 ```{r}
 # Introduce aquí tu respuesta
-print("Tu respuesta")
 
+t(aggregate(datos, by = list(datos$cluster), FUN = mean))[c("PercentExportSmallBiz", "PercentExportValue"), ]
 ```
+El cluster 4 es el cluster con los indicadores apropiados para esa campaña, pero al ser de un unico estado, tambien se recomienda incorporar el cluster 3, debido a que tiene, notoriamente, un valor de exportación más pequeño.
+
 
 * **Ejercicio 10**: ¿Qué cluster representa mejor a los pequeños negocios con más ingresos?
 
 ```{r}
 # Introduce aquí tu respuesta
-print("Tu respuesta")
+t(aggregate(datos, by = list(datos$cluster), FUN = mean))[c("MedIncomeSelfEmpUnincorp"), ]
 
 ```
-
+En general el ingreso es bastante parejo, el cluster 4 es el que tiene mayores ingresos, pero es solo 1 estado. Por lo que tambien se destaca el cluster 2 que esta tambien tiene un buen ingreso.
 ## 1.4 Puntuación del del ejercicio
 
 Este ejercicio se puntuará con 10 puntos, siendo el mínimo necesario para superar la prueba de 5 puntos. 

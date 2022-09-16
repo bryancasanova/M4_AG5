@@ -1321,6 +1321,8 @@ window.initializeCodeFolding = function(show) {
   // select all R code blocks
   var rCodeBlocks = $('pre.r, pre.python, pre.bash, pre.sql, pre.cpp, pre.stan, pre.julia, pre.foldable');
   rCodeBlocks.each(function() {
+    // skip if the block has fold-none class
+    if ($(this).hasClass('fold-none')) return;
 
     // create a collapsable div to wrap the code in
     var div = $('<div class="collapse r-code-collapse"></div>');
@@ -1717,7 +1719,7 @@ data.</p>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span>(factoextra)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Carga el dataset</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>datos <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;D:/Master/4.4_Cluster_ejercicio.csv&quot;</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>datos <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;4.4_Cluster_ejercicio.csv&quot;</span>)</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(datos)</span></code></pre></div>
 <pre><code>##        State PercentSmallBiz PercentEmplySmallBiz AvgEmPerSmallBiz
 ## 1    Alabama       0.9936905            0.4746900              2.0
@@ -1899,7 +1901,7 @@ que también podría ser óptimo? Justifica tu respuesta.</li>
 clusters, siguiendo la linea horizontal azul, sin embargo, dado que el
 estado de Columbia presenta un comportamiento bastante inusual ya que es
 una rama independiente al resto de los estados, se prefiere utilizar 4
-clusters, siguiendo la línea horizontal roja para representar mejor la
+clusters, siguiendo la línea horizontal roja, para representar mejor la
 variabilidad del resto de los estados.</p>
 <p>Una vez tomada la decisión del número de clusters a realizar,
 procedemos a crear y visualizar los clusters en dos dimensiones.</p>
@@ -1929,9 +1931,38 @@ interesante, la interpretación de estos.</p>
 <li><strong>Ejercicio 6</strong>: Elige qué estado consideras que es más
 representativo de cada cluster. Justifica tu respuesta.</li>
 </ul>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Introduce aquí tu respuesta</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Tu respuesta&quot;</span>)</span></code></pre></div>
-<pre><code>## [1] &quot;Tu respuesta&quot;</code></pre>
+<p>Como en nuestro escenario <code>k=4</code> tenemos que escoger 1
+estado representante de cada cluster, para ello se verá la distnacia con
+respecto al centroide. Aquel estado más cercano al centroide será el
+escogido.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>datos_scaled <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(datos_scaled)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>datos_scaled<span class="sc">$</span>cluster <span class="ot">&lt;-</span> km_clusters<span class="sc">$</span>cluster</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>distance_to_center <span class="ot">&lt;-</span> <span class="cf">function</span>(datos_scaled, k, km_clusters){</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  data_filter <span class="ot">=</span> datos_scaled[datos_scaled<span class="sc">$</span>cluster <span class="sc">==</span> k, ]</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  center <span class="ot">&lt;-</span> km_clusters<span class="sc">$</span>centers[k,]</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  distance <span class="ot">&lt;-</span> <span class="cn">Inf</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  state <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (row <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(data_filter)){</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>        k_distance <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(data_filter[row, <span class="sc">-</span><span class="dv">1</span>] <span class="sc">-</span> center)<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (k_distance <span class="sc">&lt;</span> distance) {</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>      distance <span class="ot">&lt;-</span> k_distance</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>      state <span class="ot">&lt;-</span> <span class="fu">row.names</span>(data_filter)[row]</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span> (<span class="fu">c</span>(state, distance))</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>representantes <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">distance_to_center</span>(datos_scaled, <span class="dv">1</span>, km_clusters)[<span class="dv">1</span>], <span class="fu">distance_to_center</span>(datos_scaled, <span class="dv">2</span>, km_clusters)[<span class="dv">1</span>], <span class="fu">distance_to_center</span>(datos_scaled, <span class="dv">3</span>, km_clusters)[<span class="dv">1</span>], <span class="fu">distance_to_center</span>(datos_scaled, <span class="dv">4</span>, km_clusters)[<span class="dv">1</span>])</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(representantes)</span></code></pre></div>
+<pre><code>## [1] &quot;Arizona&quot;              &quot;South Dakota&quot;         &quot;Iowa&quot;                
+## [4] &quot;District of Columbia&quot;</code></pre>
+<p>Nota: El cluster 4 solo cuenta con un uno estado!.</p>
 <ul>
 <li><strong>Ejercicio 7</strong>: Indexa cada uno de los estados más
 representativos de cada cluster sobre el dataframe inicial y crea un
@@ -1943,15 +1974,65 @@ nuevo tablón de datos en el que únicamente se encuentren estos estados.
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Creo nuevo dataframe sobre el tablon inicial solo con los estados que quiero ver</span></span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Introduce aquí tu respuesta</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Tu respuesta&quot;</span>)</span></code></pre></div>
-<pre><code>## [1] &quot;Tu respuesta&quot;</code></pre>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>( <span class="fu">t</span>(datos[datos<span class="sc">$</span>State <span class="sc">%in%</span> representantes, ]))</span></code></pre></div>
+<pre><code>##                          3           9                      16         
+## State                    &quot;Arizona&quot;   &quot;District of Columbia&quot; &quot;Iowa&quot;     
+## PercentSmallBiz          &quot;0.9942976&quot; &quot;0.9817498&quot;            &quot;0.9928945&quot;
+## PercentEmplySmallBiz     &quot;0.4449635&quot; &quot;0.4739182&quot;            &quot;0.4830516&quot;
+## AvgEmPerSmallBiz         &quot;1.8&quot;       &quot;3.3&quot;                  &quot;2.4&quot;      
+## MedIncomeSelfEmpCorp     &quot;48698&quot;     &quot;66500&quot;                &quot;44504&quot;    
+## MedIncomeSelfEmpUnincorp &quot;20872&quot;     &quot;34113&quot;                &quot;25494&quot;    
+## PercentExportSmallBiz    &quot;0.874&quot;     &quot;0.768&quot;                &quot;0.830&quot;    
+## PercentExportValue       &quot;0.231&quot;     &quot;0.795&quot;                &quot;0.189&quot;    
+## StateGDPGrowth           &quot;0.03&quot;      &quot;0.02&quot;                 &quot;0.02&quot;     
+## StateUnemployRate        &quot;0.05&quot;      &quot;0.06&quot;                 &quot;0.03&quot;     
+## ShareManufactEmploy      &quot;0.46&quot;      &quot;0.77&quot;                 &quot;0.32&quot;     
+## AvgEmpPerWOB             &quot;8.3&quot;       &quot;9.3&quot;                  &quot;8.5&quot;      
+## AvgEmpPerVOB             &quot;11.5&quot;      &quot;10.0&quot;                 &quot; 9.1&quot;     
+## AvgEmpPerMOB             &quot;9.4&quot;       &quot;9.0&quot;                  &quot;8.5&quot;      
+## ShareProSvcEmploy        &quot;0.56&quot;      &quot;0.46&quot;                 &quot;0.65&quot;     
+## GrowthNumPropiertors     &quot;0.03&quot;      &quot;0.03&quot;                 &quot;0.02&quot;     
+##                          42            
+## State                    &quot;South Dakota&quot;
+## PercentSmallBiz          &quot;0.9899325&quot;   
+## PercentEmplySmallBiz     &quot;0.5931267&quot;   
+## AvgEmPerSmallBiz         &quot;2.5&quot;         
+## MedIncomeSelfEmpCorp     &quot;45704&quot;       
+## MedIncomeSelfEmpUnincorp &quot;31506&quot;       
+## PercentExportSmallBiz    &quot;0.752&quot;       
+## PercentExportValue       &quot;0.362&quot;       
+## StateGDPGrowth           &quot;0.01&quot;        
+## StateUnemployRate        &quot;0.03&quot;        
+## ShareManufactEmploy      &quot;0.43&quot;        
+## AvgEmpPerWOB             &quot;8.3&quot;         
+## AvgEmpPerVOB             &quot;10.0&quot;        
+## AvgEmpPerMOB             &quot;8.8&quot;         
+## ShareProSvcEmploy        &quot;0.81&quot;        
+## GrowthNumPropiertors     &quot;0.01&quot;</code></pre>
+<p>El Cluster 4 posee un alto nivel de</p>
 <ul>
 <li><strong>Ejercicio 8</strong>: ¿Cuál de los estados seleccionados en
 el ejercicio anterior tiene una tasa de desempleo más elevada?</li>
 </ul>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Introduce aquí tu respuesta</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Tu respuesta&quot;</span>)</span></code></pre></div>
-<pre><code>## [1] &quot;Tu respuesta&quot;</code></pre>
+<p>En primer lugar vamos a asignar la etiqueta de los clusters a los
+datos originales.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>datos<span class="sc">$</span>cluster <span class="ot">&lt;-</span> km_clusters<span class="sc">$</span>cluster</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">t</span>(<span class="fu">aggregate</span>(datos, <span class="at">by =</span> <span class="fu">list</span>(datos<span class="sc">$</span>cluster), <span class="at">FUN =</span> mean))[<span class="st">&#39;StateUnemployRate&#39;</span>, ]</span></code></pre></div>
+<pre><code>## Warning in mean.default(X[[i]], ...): argument is not numeric or logical:
+## returning NA
+
+## Warning in mean.default(X[[i]], ...): argument is not numeric or logical:
+## returning NA
+
+## Warning in mean.default(X[[i]], ...): argument is not numeric or logical:
+## returning NA
+
+## Warning in mean.default(X[[i]], ...): argument is not numeric or logical:
+## returning NA</code></pre>
+<pre><code>## [1] 0.04388889 0.03636364 0.04142857 0.06000000</code></pre>
+<p>El cluster que tiene una mayor tasa de desempleo es el cluster 4 con
+un unico valor</p>
 <ul>
 <li><strong>Ejercicio 9</strong>: Si el presidente de los Estados Unidos
 quisiera lanzar una campaña para aumentar el volumen de exportaciones de
@@ -1960,19 +2041,49 @@ del país, y con menor valor, qué cluster o clusters le propondrías?
 (Menciona únicamente el estado que consideres más representativo del
 cluster)</li>
 </ul>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Introduce aquí tu respuesta</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Tu respuesta&quot;</span>)</span></code></pre></div>
-<pre><code>## [1] &quot;Tu respuesta&quot;</code></pre>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Introduce aquí tu respuesta</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="fu">t</span>(<span class="fu">aggregate</span>(datos, <span class="at">by =</span> <span class="fu">list</span>(datos<span class="sc">$</span>cluster), <span class="at">FUN =</span> mean))[<span class="fu">c</span>(<span class="st">&quot;PercentExportSmallBiz&quot;</span>, <span class="st">&quot;PercentExportValue&quot;</span>), ]</span></code></pre></div>
+<pre><code>## Warning in mean.default(X[[i]], ...): argument is not numeric or logical:
+## returning NA
+
+## Warning in mean.default(X[[i]], ...): argument is not numeric or logical:
+## returning NA
+
+## Warning in mean.default(X[[i]], ...): argument is not numeric or logical:
+## returning NA
+
+## Warning in mean.default(X[[i]], ...): argument is not numeric or logical:
+## returning NA</code></pre>
+<pre><code>##                            [,1]      [,2]      [,3]  [,4]
+## PercentExportSmallBiz 0.8942222 0.8122818 0.8316238 0.768
+## PercentExportValue    0.3395000 0.4728273 0.2393857 0.795</code></pre>
+<p>El cluster 4 es el cluster con los indicadores apropiados para esa
+campaña, pero al ser de un unico estado, tambien se recomienda
+incorporar el cluster 3, debido a que tiene, notoriamente, un valor de
+exportación más pequeño.</p>
 <ul>
 <li><strong>Ejercicio 10</strong>: ¿Qué cluster representa mejor a los
 pequeños negocios con más ingresos?</li>
 </ul>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Introduce aquí tu respuesta</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Tu respuesta&quot;</span>)</span></code></pre></div>
-<pre><code>## [1] &quot;Tu respuesta&quot;</code></pre>
-</div>
-<div id="puntuación-del-del-ejercicio" class="section level2">
-<h2>1.4 Puntuación del del ejercicio</h2>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Introduce aquí tu respuesta</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">t</span>(<span class="fu">aggregate</span>(datos, <span class="at">by =</span> <span class="fu">list</span>(datos<span class="sc">$</span>cluster), <span class="at">FUN =</span> mean))[<span class="fu">c</span>(<span class="st">&quot;MedIncomeSelfEmpUnincorp&quot;</span>), ]</span></code></pre></div>
+<pre><code>## Warning in mean.default(X[[i]], ...): argument is not numeric or logical:
+## returning NA
+
+## Warning in mean.default(X[[i]], ...): argument is not numeric or logical:
+## returning NA
+
+## Warning in mean.default(X[[i]], ...): argument is not numeric or logical:
+## returning NA
+
+## Warning in mean.default(X[[i]], ...): argument is not numeric or logical:
+## returning NA</code></pre>
+<pre><code>## [1] 24250.33 26087.82 22282.14 34113.00</code></pre>
+<p>En general el ingreso es bastante parejo, el cluster 4 es el que
+tiene mayores ingresos, pero es solo 1 estado. Por lo que tambien se
+destaca el cluster 2 que esta tambien tiene un buen ingreso. ## 1.4
+Puntuación del del ejercicio</p>
 <p>Este ejercicio se puntuará con 10 puntos, siendo el mínimo necesario
 para superar la prueba de 5 puntos. La puntuación es la siguiente:</p>
 <ul>
