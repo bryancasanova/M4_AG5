@@ -153,7 +153,7 @@ representantes <- distance_to_center()
 print(representantes)
 ```
 Es necesario aclarar que estos estados son los más cercanos al centroide de cada cluster considerando las 4 dimensiones, mientras que las visualización anterior solo considera las dimensiones 1 y 2.
-Nota: El cluster 4 solo cuenta con un uno estado!.
+Nota: El cluster 4 solo cuenta con solo un estado!.
 
 * **Ejercicio 7**: Indexa cada uno de los estados más representativos de cada cluster sobre el dataframe inicial y crea un nuevo tablón de datos en el que únicamente se encuentren estos estados. ¿Qué variables difieren en más en valor entre unos estados y otros?
 
@@ -170,9 +170,9 @@ print( t(datos[datos$State %in% representantes, ]))
 ```
 El Cluster 4 posee un alto nivel de Empleados por Negocio pequeño, además es el  que mejor renta tiene.
 
-Por otro lado, el cluster 1 tiene un alto nivel en el promediode empleados por pequeños negocios regentados por veteranos de guerra, tambien el que tiene menor Promedio de empleados por pequeños negocios regentados por minorías étnicas.
+Por otro lado, el cluster 1 tiene un alto nivel en el promedio de empleados por pequeños negocios regentados por veteranos de guerra, tambien el que tiene menor Promedio de empleados por pequeños negocios regentados por minorías étnicas.
 
-El cluster 2 se caracterusa por tener el peor promedio de empleados por pequeños negocios regentados por mujeres y también el peor promedio de empleados por pequeños negocios regentados por veteranos de guerra y al mismo tiempor es el que tiene mejor porcentaje de pequeños negocios pertenecientes al sector terciario.
+El cluster 2 se caracterusa por tener el peor promedio de empleados por pequeños negocios regentados por mujeres y también el peor promedio de empleados por pequeños negocios regentados por veteranos de guerra y al mismo tiempo es el que tiene mejor porcentaje de pequeños negocios pertenecientes al sector terciario.
 
 El cluster 3 es el que tiene la peor mediana de salarios. Destaca su alto promedio de empleados por pequeños negocios regentados por mujeres y por minorías étnicas. 
 
@@ -205,9 +205,6 @@ datos %>%
 ```
 
 Los datos nos muestran que, en promedio, al tener un mayor porcentaje de exportadores que son negocios pequeños disminuye el valor exportado por este tipo de negocios y que al mismo tiempo, el crecimiento de los negocios pequeños es bastante homogéneo, por lo tanto, si se quiere implementar una campaña para aumentar ambas variables, se debería enfocar por separado donde  a los estados de District of Columbia y New Hampshire se les debiese promover un aumento del porcentaje de exportaciones para negocios pequeños y al estado de Alabama un aumento del valor exportado por estos negocios. 
-
-El cluster 4 es el cluster con los indicadores apropiados para esa campaña, pero al ser de un unico estado, tambien se recomienda incorporar el cluster 3, debido a que tiene, notoriamente, un valor de exportación más pequeño.
-
 
 * **Ejercicio 10**: ¿Qué cluster representa mejor a los pequeños negocios con más ingresos?
 
