@@ -168,7 +168,15 @@ datos <- datos %>% left_join(
 # Introduce aquí tu respuesta
 print( t(datos[datos$State %in% representantes, ]))
 ```
-El Cluster 4 posee un alto nivel de 
+El Cluster 4 posee un alto nivel de Empleados por Negocio pequeño, además es el  que mejor renta tiene.
+
+Por otro lado, el cluster 1 tiene un alto nivel en el promediode empleados por pequeños negocios regentados por veteranos de guerra, tambien el que tiene menor Promedio de empleados por pequeños negocios regentados por minorías étnicas.
+
+El cluster 2 se caracterusa por tener el peor promedio de empleados por pequeños negocios regentados por mujeres y también el peor promedio de empleados por pequeños negocios regentados por veteranos de guerra y al mismo tiempor es el que tiene mejor porcentaje de pequeños negocios pertenecientes al sector terciario.
+
+El cluster 3 es el que tiene la peor mediana de salarios. Destaca su alto promedio de empleados por pequeños negocios regentados por mujeres y por minorías étnicas. 
+
+
 
 
 * **Ejercicio 8**: ¿Cuál de los estados seleccionados en el ejercicio anterior tiene una tasa de desempleo más elevada?
