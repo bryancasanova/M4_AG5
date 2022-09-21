@@ -1,7 +1,7 @@
 ---
 title:    "Ejercicio práctico Clustering"
 author: "Bryan Casanova - José Godoy"
-date: "20-07-2022"
+date: "21-09-2022"
 license:  by-nc-sa
 urlcolor: blue
 output:
@@ -31,7 +31,7 @@ Así pues, lo primero que haremos es cargar el dataset en R:
 ```{r,warning=FALSE,message=FALSE}
 # Carga paquetes necesarios
 require(factoextra)
-
+library(dplyr)
 # Carga el dataset
 datos <- read.csv("4.4_Cluster_ejercicio.csv")
 head(datos)
@@ -86,7 +86,6 @@ Al visualizar la curva vemos que aún cuando no se observa un "codo" muy marcado
 * **Ejercicio 4**: Elige el número de clusters óptimos mediante la representación del dendrograma. ¿Observas algún otro número que también podría ser óptimo? Justifica tu respuesta.
 
 ```{r}
-library(factoextra)
 # Visualización del dendrograma
 set.seed(123)
 hc_euclidea_completo <- hclust(d = dist(x = datos_scaled, method = "euclidean"),
@@ -98,7 +97,7 @@ fviz_dend(x = hc_euclidea_completo, cex = 0.5, main = "Linkage completo",
   geom_hline(yintercept = 9.3, col = "blue", linetype = "dashed") 
 ```
 
-Visualizando el dendrogramo observamos que se podrían escoger 3 clusters, siguiendo la linea horizontal azul, sin embargo, dado que el estado de Columbia presenta un comportamiento bastante inusual ya que es una rama independiente al resto de los estados, se prefiere utilizar 4 clusters, siguiendo la línea horizontal roja, para representar mejor la variabilidad del resto de los estados.
+Visualizando el dendrogramo observamos que se podrían escoger 3 clusters, siguiendo la linea horizontal azul, sin embargo, dado que el estado de Columbia presenta un comportamiento bastante inusual ya que es una rama independiente al resto de los estados, se prefiere utilizar 4 clusters, siguiendo la línea horizontal roja, para representar mejor la variabilidad del resto de los estados, lo que concuerda con lo encontrado con el método elbow.
 
 Una vez tomada la decisión del número de clusters a realizar, procedemos a crear y visualizar los clusters en dos dimensiones.
 
@@ -123,46 +122,49 @@ Una vez disponemos de la visualización en dos dimensiones de los estados que pe
 
 * **Ejercicio 6**: Elige qué estado consideras que es más representativo de cada cluster. Justifica tu respuesta.
 
-Como en nuestro escenario `k=4` tenemos que escoger 1 estado representante de cada cluster, para ello se verá la distnacia con respecto al centroide. Aquel estado más cercano al centroide será el escogido.
+Como en nuestro escenario `k=4` tenemos que escoger 1 estado representante de cada cluster, para ello se verá la distancia con respecto al centroide. Aquel estado más cercano al centroide será el escogido.
 
 
 ```{r}
 datos_scaled <- as.data.frame(datos_scaled)
 datos_scaled$cluster <- km_clusters$cluster
 
-distance_to_center <- function(datos_scaled, k, km_clusters){
-  
+distance_to_center <- function(df = datos_scaled){
+  ks <- (datos_scaled %>% arrange(cluster) %>% pull(cluster)) %>% unique()
+  states <- c()
+  for (k in 1:length(ks)){
   data_filter = datos_scaled[datos_scaled$cluster == k, ]
   center <- km_clusters$centers[k,]
   distance <- Inf
   state <- NULL
   for (row in 1:nrow(data_filter)){
-        k_distance <- sqrt(sum(data_filter[row, -1] - center)^2)
+        k_distance <- sqrt(sum(data_filter[row, -ncol(data_filter)] - center)^2)
     if (k_distance < distance) {
       distance <- k_distance
       state <- row.names(data_filter)[row]
+        }
     }
-    
+  states <- c(states, state)
   }
-  return (c(state, distance))
-  
+return (states)  
 }
 
-
-representantes <- c(distance_to_center(datos_scaled, 1, km_clusters)[1], distance_to_center(datos_scaled, 2, km_clusters)[1], distance_to_center(datos_scaled, 3, km_clusters)[1], distance_to_center(datos_scaled, 4, km_clusters)[1])
-
+representantes <- distance_to_center()
 print(representantes)
 ```
-
+Es necesario aclarar que estos estados son los más cercanos al centroide de cada cluster considerando las 4 dimensiones, mientras que las visualización anterior solo considera las dimensiones 1 y 2.
 Nota: El cluster 4 solo cuenta con un uno estado!.
 
 * **Ejercicio 7**: Indexa cada uno de los estados más representativos de cada cluster sobre el dataframe inicial y crea un nuevo tablón de datos en el que únicamente se encuentren estos estados. ¿Qué variables difieren en más en valor entre unos estados y otros?
 
 ```{r}
 # Selecciono los estados que quiero ver en un vector
-
 # Creo nuevo dataframe sobre el tablon inicial solo con los estados que quiero ver
-
+datos <- datos %>% left_join(
+  datos_scaled %>% 
+    tibble::rownames_to_column("State") %>% 
+    select(State, cluster), by = "State") %>% 
+  arrange(cluster)
 # Introduce aquí tu respuesta
 print( t(datos[datos$State %in% representantes, ]))
 ```
@@ -171,24 +173,31 @@ El Cluster 4 posee un alto nivel de
 
 * **Ejercicio 8**: ¿Cuál de los estados seleccionados en el ejercicio anterior tiene una tasa de desempleo más elevada?
 
-En primer lugar vamos a asignar la etiqueta de los clusters a los datos originales.
-
 ```{r}
-datos$cluster <- km_clusters$cluster
-
-t(aggregate(datos, by = list(datos$cluster), FUN = mean))['StateUnemployRate', ]
-
-
+datos %>% 
+  select(State, StateUnemployRate, cluster) %>% 
+  filter(State %in% representantes) %>% 
+  arrange(desc(StateUnemployRate))
 ```
-El cluster que tiene una mayor tasa de desempleo es el cluster 4 con un unico valor
+De los estados seleccionados, el que tiene una mayor tasa de desempleo es District of Columbia, el cuál es el único estado asociado al cluster 4.
 
 * **Ejercicio 9**: Si el presidente de los Estados Unidos quisiera lanzar una campaña para aumentar el volumen de exportaciones de pequeños negocios hacia el exterior sobre los estados que menos exportan del país, y con menor valor, qué cluster o clusters le propondrías? (Menciona únicamente el estado que consideres más representativo del cluster)
 
 ```{r}
 # Introduce aquí tu respuesta
-
-t(aggregate(datos, by = list(datos$cluster), FUN = mean))[c("PercentExportSmallBiz", "PercentExportValue"), ]
+datos %>% 
+  group_by(cluster) %>% 
+  summarize(Porcentaje_exportadores_pequeños = mean(PercentExportSmallBiz),
+            Porcentaje_valor_exportado = mean(PercentExportValue),
+            Crecimiento_negocios_pequeños = mean(GrowthNumPropiertors)) %>% 
+  mutate(Porcentaje_exportadores_pequeños = round(100*Porcentaje_exportadores_pequeños,1),
+         Porcentaje_valor_exportado = round(100*Porcentaje_valor_exportado,1),
+         Crecimiento_negocios_pequeños = round(100*Crecimiento_negocios_pequeños,1)) %>% 
+  arrange(Porcentaje_exportadores_pequeños)
 ```
+
+Los datos nos muestran que, en promedio, al tener un mayor porcentaje de exportadores que son negocios pequeños disminuye el valor exportado por este tipo de negocios y que al mismo tiempo, el crecimiento de los negocios pequeños es bastante homogéneo, por lo tanto, si se quiere implementar una campaña para aumentar ambas variables, se debería enfocar por separado donde  a los estados de District of Columbia y New Hampshire se les debiese promover un aumento del porcentaje de exportaciones para negocios pequeños y al estado de Alabama un aumento del valor exportado por estos negocios. 
+
 El cluster 4 es el cluster con los indicadores apropiados para esa campaña, pero al ser de un unico estado, tambien se recomienda incorporar el cluster 3, debido a que tiene, notoriamente, un valor de exportación más pequeño.
 
 
@@ -196,10 +205,13 @@ El cluster 4 es el cluster con los indicadores apropiados para esa campaña, per
 
 ```{r}
 # Introduce aquí tu respuesta
-t(aggregate(datos, by = list(datos$cluster), FUN = mean))[c("MedIncomeSelfEmpUnincorp"), ]
-
+datos %>% 
+  group_by(cluster) %>% 
+  summarize(Ingresos_peq_neg = mean(MedIncomeSelfEmpUnincorp)) %>% 
+  arrange(desc(Ingresos_peq_neg))
 ```
-En general el ingreso es bastante parejo, el cluster 4 es el que tiene mayores ingresos, pero es solo 1 estado. Por lo que tambien se destaca el cluster 2 que esta tambien tiene un buen ingreso.
+En general el ingreso es bastante parejo, el cluster 4 es el que tiene mayores ingresos, pero es solo 1 estado. Por lo que tambien se destaca el cluster 2 ya que posee un mayor ingreso promedio de negocios pequeños en comparación a los otros clusters.
+
 ## 1.4 Puntuación del del ejercicio
 
 Este ejercicio se puntuará con 10 puntos, siendo el mínimo necesario para superar la prueba de 5 puntos. 
